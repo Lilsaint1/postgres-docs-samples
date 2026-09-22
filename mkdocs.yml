@@ -1,0 +1,7 @@
+site_name: PostgreSQL-Documentation-Samples
+theme:
+  name: material
+nav:
+-Home: index.md
+-Performance Regression Guide: performance-regression.md
+-Lock and connection Guide: locks-connections.md
