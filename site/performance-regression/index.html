@@ -1,0 +1,533 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../locks-connections/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Performance regression - PostgreSQL-Documentation-Samples</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#find-the-slow-request-not-the-slow-app" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PostgreSQL-Documentation-Samples" class="md-header__button md-logo" aria-label="PostgreSQL-Documentation-Samples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PostgreSQL-Documentation-Samples
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Performance regression
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PostgreSQL-Documentation-Samples" class="md-nav__button md-logo" aria-label="PostgreSQL-Documentation-Samples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PostgreSQL-Documentation-Samples
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Welcome to MkDocs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../locks-connections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PostgreSQL Under Pressure: Diagnosing Locks and Connection Problems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance regression
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance regression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#find-the-slow-request-not-the-slow-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find the Slow Request, Not the Slow App
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compare-the-same-request-two-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare the Same Request, Two Versions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#find-the-slow-request-not-the-slow-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find the Slow Request, Not the Slow App
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compare-the-same-request-two-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare the Same Request, Two Versions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Performance regression</h1>
+
+<p><strong>Why   Did My  Application Get Slower  After   a   Release?</strong>
+A   new release goes    out.    The deploy  succeeds.   Health  checks  are green.  Nothing has technically broken.
+Then    the messages    start:
+<em>“The   app feels   a   lot slower  than    it  did yesterday.”</em>
+No  errors. No  downtime.   The database    is  accepting   connections.    The dashboards  are mostly  green.  So  what    actually
+changed?
+A   release can quietly hurt    performance without breaking    anything    outright:   a   query   that    got a   little  more    expensive,  a
+new API call    added   to  every   request,    an  index   that    no  longer  matches how the query   is  now written.    The application
+stays   technically available   while   becoming    practically unusable,   and that    gap is  exactly where   this    kind    of  incident
+hides.</p>
+<p>This    guide   walks   through a   systematic  way to  find    it:</p>
+<p><strong>Establish the regression  →   Identify    the affected    layer   →   Collect evidence    →   Compare against the last release    →   Find    the root    cause   →   Apply   the smallest    fix that    works   →   Verify</strong></p>
+<p><strong>Don’t Start   With    the Database</strong>
+The first   instinct    is  almost  always  “the    database    must    be  slow.”  Sometimes   it  is. But the database    is  just    one stop    on  a
+much    longer  journey:</p>
+<pre><code>
+    User    →   Browser →   Load    Balancer    → Application   Server
+                    │
+    ┌───────────────┼───────────────┐   
+External API      Cache         PostgreSQL 
+</code></pre>
+<p>A   regression  can appear  at  any point   on  that    path:   a   chattier    frontend,   an  added   API call,   a   cache   that    quietly stopped
+working,    a   changed query.  So  the opening question    isn’t   “what’s wrong   with    Postgres?”  It’s:</p>
+<p><strong>Which part    of  the request actually    got slower?</strong></p>
+<p>That    one reframe saves   hours.  It’s    also    the difference  between a   junior  debugging   session and a   senior  one.</p>
+<p><strong>Confirm   the Regression  Is  Real</strong>
+“It feels   slower” is  a   useful  signal, not a   diagnosis.  Before  investigating   causes, get numbers:</p>
+<p><code>Before      After
+Average latency         180 ms      620 ms
+95th    percentile      350 ms      1.8 s
+99th    percentile      600 ms      4.2 s</code></p>
+<p>Now it’s    measurable. Next:   when    did it  start,  relative    to  the deploy? A   timeline    makes   the release an  obvious suspect:</p>
+<pre><code>10:00   |   Release deployed
+10:08   |   Latency starts  climbing
+10:15   |   First   user    reports
+10:20   |   Latency peaks
+</code></pre>
+<p><code>It   doesn't prove   the release caused  it, but it  gives   you a   real    hypothesis  instead of  a   guess.  Correlation tells you   where   to  look;   evidence    tells   you what    happened.</code></p>
+<h5 id="find-the-slow-request-not-the-slow-app">Find    the Slow    Request,    Not the Slow    App</h5>
+<p><code>An   application almost  never   gets    uniformly   slower. Usually one endpoint    is  dragging    the average down:</code></p>
+<p>GET /api/products   120 ms  GET /api/orders 4,800   ms  ←   here    GET /api/profile    150 ms  POST    /api/payment    400 ms
+<code>That turns   *"the   app is  slow"*  into    *"`/api/orders` got roughly 20x slower  after   release 4.8."*  That's  a   problem an engineer can actually    pick    up  and run with.--</code></p>
+<pre><code>##  Break   the Request Into    Pieces
+
+A   single  number, 4.8 seconds,    doesn't tell    you where   the time    went.   Instrumenting   the request does:
+</code></pre>
+<p>Total   request:    4,800   ms  Authentication  20  ms  Application logic   150 ms  External    API 100 ms  Database    4,400   ms  ←   the database    is  the story   here    Serialization   80  ms</p>
+<p><code>But  compare that    to  a   different   breakdown   of  the *same   total*:</code></p>
+<p>Total   request:    4,800   ms  Authentication  20  ms  Application logic   150 ms  External    API 4,400   ms  ←   now it  isn’t   Database 120    ms</p>
+<p><code>Same headline    number, completely  different   root    cause.  This    is  the single  most    useful  habit   in  this    whole   process: measure    the *whole* request before  assuming    which   piece   is  guilty.--</code></p>
+<p><code>##   When    the Database    Is  Innocent</code>
+<code>Sometimes    the query   is  fine,   and the application is  just    asking  for more    of  them.   The classic version of  this    is  the **N+1   query   problem**:  fetch   100 orders, then    fetch   each    order's customer    with    a   separate    query.  That's  101 round   trips where a   handful would   do.</code>
+<code>Each individual  query   might   run in  20–80ms and look    completely  healthy in  isolation.  It's    only    when    you count   *how    many    times*  the app is  asking, not just    *how    fast*   each    ask returns,    that    the real    cost    shows   up. The fix (usually    a   join,   or batching the lookups)    matters less    than    the diagnostic  habit   behind  it: **count the work,   not just    the time.**</code>
+<code>The  same    shape   shows   up  elsewhere   too:    a   release that    doesn't change  the SQL at  all,    but changes *how    often*  it  runs:</code></p>
+<p>Before: 100 requests    ×   1   query   =   100 queries After:  100 requests    ×   20  queries =   2,000   queries</p>
+<p><code>Perfectly    optimized   SQL,    twenty  times   the load.   Query   *cost*  and query   *frequency* are two different   questions,  and a   regression  can hide    in  either  one.</code>
+<code>*(If the database    genuinely   is  the bottleneck, the usual   next    steps,  reading the execution   plan,   checking    whether it's executing  or  stuck   waiting on  a   lock,   follow  the same    evidence-first  approach    as  any query-performance   investigation.)*--</code></p>
+<p><code>##   The Bottleneck  Is  Often   Outside the Database    Entirely</code></p>
+<p><code>Three    causes  worth   knowing by  name,   because they're easy    to  miss    if  you're  only    looking at  Postgres:</code></p>
+<p><strong>A new external    dependency.</strong> <br />
+<code>A    release adds    a   fraud-check API.    Your    queries haven't changed at  all,    but now every request waits 3   extra   seconds on  someone else's  service:</code></p>
+<p>Application:    120 ms  PostgreSQL: 80  ms  Fraud   API:    3,200   ms  ←   the actual  story</p>
+<p><code>**A  retry   policy  that    multiplies  the problem.**  A   dependency  that    used    to  fail    fast    now retries three   times   at  2   seconds each.   That    turns   one slow    call    into    six seconds of  waiting,    and multiplies  downstream  traffic in  the process:</code></p>
+<p>Slow    dependency  →   timeout →   retry   →   more    traffic →   more    load    →   slower  dependency  →   more    timeouts</p>
+<p><code>That's   not a   performance regression  anymore.    Left    unchecked,  it's    a   feedback    loop    that    becomes an  outage.</code></p>
+<p><code>**A  cache   that    quietly stopped working.**  A   changed cache   key,    a   changed expiration  policy, a   changed serialization format,   and hit rate    drops   from    95% to  40% overnight.  The database    didn't  get less    efficient.  It  just    stopped being protected.--</code></p>
+<h2 id="compare-the-same-request-two-versions">Compare the Same    Request,    Two Versions</h2>
+<p><code>The  cleanest    way to  close   out an  investigation   like    this    is  a   direct, controlled  comparison:</code></p>
+<p>v4.7:   Request latency 180 ms  (DB:    40  ms  ·   External    API:    20  ms  ·   App:    120 ms) v4.8:   Request latency 2,800   ms  (DB:    45
+ms  ·   External    API:    2,600   ms  ·   App:    155 ms)</p>
+<p>The database    barely  moved.  The evidence    points  somewhere   else    entirely,   in  this    case    straight    at  the new external
+dependency, not at  PostgreSQL. That’s  the payoff  of  measuring   the whole   path    instead of  guessing    from    the symptom: the    fix goes    to  the actual  cause   on  the first   try,    instead of  an  index   that    was never   going   to  help.</p>
+<p><strong>The   Actual  Takeaway</strong>
+None    of  this    is  about   memorizing  a   list    of  possible    causes: code,   migrations, config, connection  pools,  caching,    external services,  retries.    It’s    about   resisting   the pull    toward  the nearest familiar    suspect (almost always  “the    database”)  and instead following   one question    all the way down:</p>
+<p><strong>Which part    of  the request actually    got slower, and what    evidence    says    so?</strong>
+Everything  else,   the timeline,   the request breakdown,  the version comparison, exists  to  answer  that    one question honestly,  instead of  guessing    and hoping  the fix sticks</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
